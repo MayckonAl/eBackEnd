@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client'
 
 const GET_IDS_CARDS = gql`
-  query get_idCard($ids: IDFilterInput) {
-    cards(filters: { id: $ids }) {
+  query get_idCard($ids: [ID]) {
+    cards(filters: { id: { in: $ids } }) {
       data {
         id
         attributes {

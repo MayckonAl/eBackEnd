@@ -15,37 +15,33 @@ const CartProvider = ({ children }) => {
   const [cartItem, setCartItem] = useState([])
 
   useEffect(() => {
-    console.log('effect')
+    const data = getStorageItem(CART_KEY)
+    if (data) {
+      setCartItem(data)
+    }
   }, [])
 
   const { data, loading } = useQuery(GET_IDS_CARDS, {
     skip: !cartItem?.length,
     variables: {
-      filters: {
-        id: cartItem
-      }
+      ids: cartItem
     }
   })
 
   const itemsCout = cartItem.length
-
   const addToCart = (id) => {
-    const itemExiste = cartItem.find((itemId) => itemId === id)
-    if (!itemExiste) {
-      const newItems = [...cartItem, id]
-      setCartItem(newItems)
-    }
+    const newItems = [...cartItem, id]
+    setCartItem(newItems)
+    setStorageItem(CART_KEY, newItems)
   }
-  console.log({ cartItem })
-
-  const IsinCart = (id) => (id ? cartItem.includes(id) : false)
+  console.log({ cartItem }, 'cartItem')
 
   return (
     <CartContext.Provider
       value={{
         items: data?.cards.data.map((item) => ({
           valor: item.attributes.valor,
-          id: item.attributes.id,
+          ids: item.id,
           desc: item.attributes.description
         })),
         addToCart,

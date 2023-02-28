@@ -7,7 +7,13 @@ import GET_IDS_CARDS from '../../pages/lib/queries/getIdsCards'
 const CART_KEY = 'cartItem'
 export const CartContextDefault = {
   items: [],
-  addToCart: () => null
+  addToCart: () => null,
+  quantity: 0,
+  total: ' 0.00',
+  isInCart: () => false,
+  removeFromCart: () => null,
+  clearCart: () => null,
+  loading: false
 }
 export const CartContext = createContext(CartContextDefault)
 
@@ -15,42 +21,61 @@ const CartProvider = ({ children }) => {
   const [cartItem, setCartItem] = useState([])
 
   useEffect(() => {
-    console.log('effect')
+    const cartLocal = window.localStorage.getItem(CART_KEY)
+    if (cartLocal) {
+      setCartItem(JSON.parse(cartLocal))
+    }
   }, [])
 
   const { data, loading } = useQuery(GET_IDS_CARDS, {
     skip: !cartItem?.length,
     variables: {
-      filters: {
-        id: cartItem
-      }
+      ids: cartItem
     }
   })
 
   const itemsCout = cartItem.length
 
+  const saveCart = (cartItem) => {
+    setCartItem(cartItem)
+    window.localStorage.setItem(CART_KEY, JSON.stringify(cartItem))
+  }
   const addToCart = (id) => {
-    const itemExiste = cartItem.find((itemId) => itemId === id)
+    const itemExiste = cartItem.find((itemId) => itemId === id.id)
     if (!itemExiste) {
-      const newItems = [...cartItem, id]
-      setCartItem(newItems)
+      saveCart([...cartItem, id.id])
     }
   }
-  console.log({ cartItem })
+  const removeFromCart = (id) => {
+    const newItems = cartItem.filter((itemId) => itemId !== id)
+    saveCart(newItems)
+  }
+  const clearCart = () => {
+    saveCart([])
+  }
 
-  const IsinCart = (id) => (id ? cartItem.includes(id) : false)
+  const total = data?.cards.data.reduce((acc, item) => {
+    return acc + item.attributes.valor
+  }, 0)
+
+  const isInCart = (id) => (id ? cartItem.includes(id) : false)
 
   return (
     <CartContext.Provider
       value={{
         items: data?.cards.data.map((item) => ({
           valor: item.attributes.valor,
-          id: item.attributes.id,
+          id: item.id,
           desc: item.attributes.description
         })),
         addToCart,
         itemsCout,
-        cartItem
+        cartItem,
+        total: total || 0,
+        isInCart,
+        removeFromCart,
+        clearCart,
+        loading
       }}
     >
       {children}
